@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPA Installer - Upload & Install iOS Apps</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f7fafc;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        .upload-text {
+            color: #4a5568;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 20px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            text-align: left;
+        }
+        .result h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .result p {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .result strong {
+            color: #4a5568;
+        }
+        .install-link {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+        .install-link:hover {
+            background: #38a169;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #e53e3e;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 IPA Installer</h1>
+        <p class="subtitle">Upload your iOS app and get an installation link instantly</p>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-text">Drop your IPA file here or click to browse</div>
+                <div class="upload-subtext">Only .ipa files are supported</div>
+                <input type="file" id="ipaFile" name="ipa" accept=".ipa" required>
+            </div>
+            <button type="submit" id="uploadBtn">Upload & Generate Link</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing your IPA file...</p>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div id="result" class="result">
+            <h2>✅ Installation Ready!</h2>
+            <p><strong>App Name:</strong> <span id="appName"></span></p>
+            <p><strong>Bundle ID:</strong> <span id="bundleId"></span></p>
+            <p><strong>Version:</strong> <span id="version"></span></p>
+            <p style="margin-top: 20px;"><strong>Installation Instructions:</strong></p>
+            <ol style="margin-left: 20px; margin-bottom: 15px;">
+                <li>Open this link on your iOS device</li>
+                <li>Tap "Install" when prompted</li>
+                <li>Trust the developer if asked</li>
+            </ol>
+            <a id="installLink" href="#" class="install-link" target="_blank">🚀 Install App</a>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const ipaFile = document.getElementById('ipaFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+
+        // Drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight() {
+            uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            ipaFile.files = files;
+        }
+
+        uploadArea.addEventListener('click', () => ipaFile.click());
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!ipaFile.files[0]) {
+                showError('Please select an IPA file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('ipa', ipaFile.files[0]);
+
+            showLoading();
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                hideLoading();
+
+                if (response.ok && data.success) {
+                    document.getElementById('appName').textContent = data.appName;
+                    document.getElementById('bundleId').textContent = data.bundleId;
+                    document.getElementById('version').textContent = data.version;
+                    document.getElementById('installLink').href = data.installUrl;
+                    showResult();
+                } else {
+                    showError(data.message || 'Upload failed. Please try again.');
+                }
+            } catch (err) {
+                hideLoading();
+                showError('Network error. Please check your connection and try again.');
+            }
+        });
+
+        function showLoading() {
+            loading.style.display = 'block';
+            uploadBtn.disabled = true;
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+            uploadBtn.disabled = false;
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function hideError() {
+            error.style.display = 'none';
+        }
+
+        function showResult() {
+            result.style.display = 'block';
+        }
+
+        function hideResult() {
+            result.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
