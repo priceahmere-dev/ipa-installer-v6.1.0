@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+cd /workspaces/ipa-installer-v6.1.0git status<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -104,6 +104,17 @@
         .result strong {
             color: #4a5568;
         }
+        .install-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .qr-code {
+            margin: 20px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            display: inline-block;
+        }
         .install-link {
             display: inline-block;
             background: #48bb78;
@@ -167,13 +178,22 @@
             <p><strong>App Name:</strong> <span id="appName"></span></p>
             <p><strong>Bundle ID:</strong> <span id="bundleId"></span></p>
             <p><strong>Version:</strong> <span id="version"></span></p>
-            <p style="margin-top: 20px;"><strong>Installation Instructions:</strong></p>
-            <ol style="margin-left: 20px; margin-bottom: 15px;">
-                <li>Open this link on your iOS device</li>
-                <li>Tap "Install" when prompted</li>
-                <li>Trust the developer if asked</li>
-            </ol>
-            <a id="installLink" href="#" class="install-link" target="_blank">🚀 Install App</a>
+
+            <div class="install-section">
+                <h3>📱 Install on Your iOS Device</h3>
+                <p>Scan this QR code with your iOS device or click the install button:</p>
+
+                <div class="qr-code">
+                    <img id="qrCode" src="" alt="Installation QR Code" style="max-width: 200px; height: auto;">
+                </div>
+
+                <br>
+                <a id="installLink" href="#" class="install-link" target="_blank">🚀 Install App</a>
+
+                <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                    <strong>Note:</strong> Installation requires iOS device and proper app signing
+                </p>
+            </div>
         </div>
     </div>
 
@@ -249,6 +269,7 @@
                     document.getElementById('bundleId').textContent = data.bundleId;
                     document.getElementById('version').textContent = data.version;
                     document.getElementById('installLink').href = data.installUrl;
+                    document.getElementById('qrCode').src = data.qrCode;
                     showResult();
                 } else {
                     showError(data.message || 'Upload failed. Please try again.');

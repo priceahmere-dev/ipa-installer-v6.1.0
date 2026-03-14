@@ -96,29 +96,57 @@ For development with auto-restart:
 npm run dev
 ```
 
-## 🛠️ How It Works
+## � Troubleshooting
 
-1. **File Upload**: IPA files are uploaded via HTTP POST
-2. **Extraction**: The server unzips the IPA and parses `Info.plist`
-3. **Manifest Generation**: Creates a `manifest.plist` with app metadata
-4. **OTA Link**: Generates an `itms-services://` URL for iOS installation
+### Network Error Issues
+If you encounter network errors:
 
-## ⚠️ Important Notes
+1. **Check Server Status**: Visit `http://localhost:3000/status` to verify the server is running
+2. **Run Tests**: Execute `./test.sh` to diagnose issues
+3. **Check Console**: Look for error messages in the server console
+4. **Dependencies**: Ensure all npm packages are installed with `npm install`
 
-- **Security**: This tool is intended for development and testing purposes
-- **Signing**: IPA files must be properly signed for installation
-- **Enterprise**: For enterprise distribution, devices must be enrolled in MDM
-- **HTTPS**: For production deployment, use HTTPS to serve the files
-- **Storage**: Uploaded files are stored temporarily; consider cleanup for production
+### Common Issues
 
-## 📋 Requirements for IPA Files
+- **"Network Error"**: Server not running or CORS issues
+- **"Invalid IPA file"**: File is corrupted or not properly signed
+- **"No file uploaded"**: File selection failed
+- **Installation fails on iOS**: App not properly signed or device restrictions
 
-- Must be a valid iOS app bundle (.ipa)
-- Properly signed with a valid certificate
-- Contains `Info.plist` with required fields:
-  - `CFBundleIdentifier`
-  - `CFBundleVersion`
-  - `CFBundleDisplayName` or `CFBundleName`
+### Testing the Server
+
+Run the test script:
+```bash
+./test.sh
+```
+
+This will check:
+- Server availability
+- Status endpoint
+- Uploads directory
+- Basic functionality
+
+## ⚠️ Important Limitations
+
+**Automatic Installation**: Due to iOS security restrictions, this tool **cannot** automatically install apps on iOS devices. Instead, it generates OTA (Over-The-Air) installation links that users must open on their iOS devices.
+
+**Requirements for Installation**:
+- iOS device (iPhone/iPad)
+- Properly signed IPA file
+- Device must be enrolled in developer program or enterprise MDM
+- Trust the developer certificate if prompted
+
+**What This Tool Does**:
+- ✅ Uploads IPA files
+- ✅ Extracts app information
+- ✅ Generates installation manifests
+- ✅ Creates QR codes for easy mobile access
+- ✅ Provides OTA installation links
+
+**What This Tool Cannot Do**:
+- ❌ Automatically install apps on iOS devices
+- ❌ Bypass iOS security restrictions
+- ❌ Install unsigned or improperly signed apps
 
 ## 🏗️ Architecture
 
